@@ -80,7 +80,6 @@
         #rialo-logo {
             position: absolute;
             right: 5%; /* Maximally right */
-            top: 50%;
             transform: translateY(-50%);
             width: 200px;
             height: auto;
@@ -212,12 +211,24 @@
         #game-over {
             display: none;
             position: absolute;
-            top: 50%;
+            top: 65%; /* Moved lower to avoid overlap */
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 48px;
             color: #fff;
             text-shadow: 0 0 10px #fff;
+            z-index: 3;
+        }
+        #win-message {
+            display: none;
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+            z-index: 11;
         }
         #win-video {
             display: none;
@@ -257,8 +268,9 @@
                 <button onclick="selectOption(2)"></button>
             </div>
             <div id="confetti"></div>
-            <div id="game-over">GAME OVER<br>ORC WON</div>
-            <video id="win-video" src="win.mov" autoplay playsinline></video>
+            <div id="game-over">GAME OVER<br>ORCA WON</div>
+            <div id="win-message">YOU WON!</div>
+            <video id="win-video" src="win.mp4" autoplay playsinline></video>
         </div>
     </div>
     <script>
@@ -437,7 +449,9 @@
                 player.style.left = '80%';
                 setTimeout(() => {
                     const winVideo = document.getElementById('win-video');
+                    const winMessage = document.getElementById('win-message');
                     winVideo.style.display = 'block';
+                    winMessage.style.display = 'block';
                     confetti();
                     player.style.opacity = '0';
                 }, 2000);
@@ -448,7 +462,7 @@
             showDialog('Take this!');
             const ork = document.getElementById('ork');
             ork.style.transition = 'left 2s';
-            ork.style.left = '50%';
+            ork.style.left = '40%'; /* Closer to player */
             setTimeout(() => {
                 ork.style.animation = 'wave-axe 1s infinite';
                 setTimeout(() => {
