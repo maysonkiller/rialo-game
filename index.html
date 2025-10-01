@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rialo Role Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000; /* Black background for monochrome style */
+            color: #fff; /* White text for monochrome contrast */
+            font-family: 'Courier New', monospace; /* Monospace font for consistent style */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            letter-spacing: 0.1em;
+        }
+        #game-frame {
+            position: relative;
+            width: 80vw;
+            height: 80vh;
+            background: url('styl.png') no-repeat center/cover; /* Custom background, assuming monochrome */
+            border: 5px solid #fff; /* White border for monochrome */
+            box-shadow: 0 0 20px #fff; /* White glow effect */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000; /* Fallback to black */
+        }
+        #game-title {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+            font-weight: bold;
+            letter-spacing: 0.2em;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #ork {
+            position: absolute;
+            left: 5%; /* Maximally left */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px; /* Slightly larger than player */
+            height: auto;
+            z-index: 2;
+            filter: grayscale(100%); /* Monochrome filter */
+        }
+        #ork-name {
+            position: absolute;
+            left: 5%;
+            top: 20%;
+            background: #fff;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 3;
+            text-align: center;
+        }
+        #ork-emotion {
+            position: absolute;
+            left: 5%;
+            top: 30%;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3;
+            color: #fff;
+        }
+        #rialo-logo {
+            position: absolute;
+            right: 5%; /* Maximally right */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 200px;
+            height: auto;
+            filter: grayscale(100%); /* Monochrome filter */
+        }
+        #player {
+            position: absolute;
+            right: 5%; /* Maximally right */
+            bottom: 20%;
+            width: 200px; /* Same size as logo, slightly smaller than ork */
+            height: auto;
+            background: url('sticker.webp') no-repeat center/contain;
+            filter: grayscale(100%); /* Monochrome filter */
+        }
+        #player-name {
+            position: absolute;
+            right: 5%;
+            top: 20%;
+            background: #fff;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 3;
+            text-align: center;
+        }
+        #countdown {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            color: #fff;
+        }
+        #dialog {
+            display: none;
+            position: absolute;
+            left: 15%; /* Adjusted for more space */
+            top: 35%; /* Adjusted to avoid overlap */
+            background: #fff;
+            color: #000;
+            padding: 10px; /* Smaller padding */
+            border-radius: 10px;
+            max-width: 250px; /* Smaller width */
+            text-align: center;
+            box-shadow: 0 0 10px #fff;
+            z-index: 3;
+        }
+        #dialog::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -20px;
+            border: 10px solid transparent;
+            border-right-color: #fff;
+            transform: translateY(-50%);
+        }
+        #player-dialog {
+            display: none;
+            position: absolute;
+            right: 15%; /* Adjusted for more space */
+            top: 35%; /* Adjusted to avoid overlap */
+            background: #fff;
+            color: #000;
+            padding: 10px; /* Smaller padding */
+            border-radius: 10px;
+            max-width: 250px; /* Smaller width */
+            text-align: center;
+            box-shadow: 0 0 10px #fff;
+            z-index: 3;
+        }
+        #player-dialog::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            border: 10px solid transparent;
+            border-left-color: #fff;
+            transform: translateY(-50%);
+        }
+        #options {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #options button {
+            width: 250px;
+            padding: 10px;
+            font-size: 16px;
+            background: #000;
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+        }
+        #options button:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 6px 8px rgba(255, 255, 255, 0.3);
+        }
+        #confetti {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 20px;
+            background: #fff; /* White confetti for monochrome */
+            animation: fall 3s linear infinite;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh); }
+        }
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+        }
+        #win-video {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50vw;
+            height: auto;
+            z-index: 10;
+        }
+        @keyframes wave-axe {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            25% { transform: translateY(-50%) rotate(45deg); }
+            50% { transform: translateY(-50%) rotate(0deg); }
+            75% { transform: translateY(-50%) rotate(-45deg); }
+            100% { transform: translateY(-50%) rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-frame">
+        <div id="game-title">R I A L O   G A M E</div>
+        <div id="game-container">
+            <img id="ork" src="3D-Orc.webp" alt="Ork">
+            <div id="ork-name">ORCA</div>
+            <div id="ork-emotion"></div>
+            <img id="rialo-logo" src="sticker.webp" alt="Rialo Logo">
+            <div id="player-name">PLAYER</div>
+            <div id="player"></div>
+            <div id="countdown"></div>
+            <div id="dialog"></div>
+            <div id="player-dialog"></div>
+            <div id="options">
+                <button onclick="selectOption(0)"></button>
+                <button onclick="selectOption(1)"></button>
+                <button onclick="selectOption(2)"></button>
+            </div>
+            <div id="confetti"></div>
+            <div id="game-over">GAME OVER<br>ORC WON</div>
+            <video id="win-video" src="win.mov" autoplay playsinline></video>
+        </div>
+    </div>
+    <script>
+        let stage = 0;
+        let correctAnswers = 0;
+        let currentRound = 0;
+        const rounds = [
+            {
+                question: "But but but, you won't pass! To go further, make me laugh!",
+                options: [
+                    "Why don't scientists trust atoms? Because they make up everything!",
+                    "The sky is blue.",
+                    "I like apples."
+                ],
+                correctText: "Why don't scientists trust atoms? Because they make up everything!"
+            },
+            {
+                question: "Hohoho, that was funny! Make me laugh again!",
+                options: [
+                    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+                    "The grass is green.",
+                    "I have a dog."
+                ],
+                correctText: "Why did the scarecrow win an award? Because he was outstanding in his field!"
+            },
+            {
+                question: "Hahaha, one more time!",
+                options: [
+                    "What do you call fake spaghetti? An impasta!",
+                    "The sun is hot.",
+                    "I need water."
+                ],
+                correctText: "What do you call fake spaghetti? An impasta!"
+            }
+        ];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            countdown(3);
+        }
+
+        function countdown(num) {
+            const cd = document.getElementById('countdown');
+            cd.textContent = num;
+            if (num > 0) {
+                setTimeout(() => countdown(num - 1), 1000);
+            } else {
+                cd.textContent = '';
+                const ork = document.getElementById('ork');
+                ork.style.top = '-200px';
+                ork.style.transition = 'top 2s ease-in-out';
+                setTimeout(() => {
+                    ork.style.top = '50%';
+                    const player = document.getElementById('player');
+                    player.style.transition = 'left 5s';
+                    player.style.left = '50%';
+                    setTimeout(() => {
+                        showDialog(rounds[currentRound].question);
+                        setTimeout(() => {
+                            const shuffledOptions = shuffle([...rounds[currentRound].options]);
+                            const correctIndex = shuffledOptions.indexOf(rounds[currentRound].correctText);
+                            showOptions(shuffledOptions, correctIndex);
+                        }, 2000); // Delay options until orc speaks
+                    }, 2000);
+                }, 100);
+            }
+        }
+
+        function showDialog(text) {
+            const dialog = document.getElementById('dialog');
+            dialog.textContent = text;
+            dialog.style.display = 'block';
+        }
+
+        function showPlayerDialog(text) {
+            const playerDialog = document.getElementById('player-dialog');
+            playerDialog.textContent = text;
+            playerDialog.style.display = 'block';
+            setTimeout(() => {
+                playerDialog.style.display = 'none';
+            }, 2000);
+        }
+
+        function showOptions(options, correct) {
+            const opts = document.getElementById('options');
+            opts.style.display = 'flex';
+            const buttons = opts.querySelectorAll('button');
+            buttons.forEach((btn, i) => {
+                if (i < 3) {
+                    btn.textContent = options[i];
+                    btn.setAttribute('data-correct', i === correct);
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        function selectOption(index) {
+            const opts = document.getElementById('options');
+            const selectedBtn = opts.querySelectorAll('button')[index];
+            const selectedText = selectedBtn.textContent;
+            const isCorrect = selectedBtn.getAttribute('data-correct') === 'true';
+            opts.style.display = 'none';
+            showPlayerDialog(selectedText);
+            const ork = document.getElementById('ork');
+            const dialog = document.getElementById('dialog');
+            dialog.style.display = 'none';
+            setTimeout(() => {
+                if (isCorrect) {
+                    correctAnswers++;
+                    showEmotion('😂');
+                    showDialog('Hohoho!');
+                    ork.style.transform = 'translateY(-50%) rotate(5deg)';
+                    setTimeout(() => {
+                        ork.style.transform = 'translateY(-50%)';
+                        dialog.style.display = 'none';
+                        if (correctAnswers < 3) {
+                            currentRound++;
+                            showDialog(rounds[currentRound].question);
+                            setTimeout(() => {
+                                const shuffledOptions = shuffle([...rounds[currentRound].options]);
+                                const correctIndex = shuffledOptions.indexOf(rounds[currentRound].correctText);
+                                showOptions(shuffledOptions, correctIndex);
+                            }, 2000);
+                        } else {
+                            winGame();
+                        }
+                    }, 2000);
+                } else {
+                    stage++;
+                    showEmotion('😡');
+                    showDialog('Grrr! That wasn\'t funny!');
+                    ork.style.filter = 'hue-rotate(0deg) grayscale(100%)';
+                    setTimeout(() => {
+                        ork.style.filter = 'grayscale(100%)';
+                        dialog.style.display = 'none';
+                        if (stage < 3) {
+                            showDialog(rounds[currentRound].question);
+                            setTimeout(() => {
+                                const shuffledOptions = shuffle([...rounds[currentRound].options]);
+                                const correctIndex = shuffledOptions.indexOf(rounds[currentRound].correctText);
+                                showOptions(shuffledOptions, correctIndex);
+                            }, 2000);
+                        } else {
+                            loseGame();
+                        }
+                    }, 2000);
+                }
+            }, 2000);
+        }
+
+        function showEmotion(emoji) {
+            const emotion = document.getElementById('ork-emotion');
+            emotion.textContent = emoji;
+            setTimeout(() => {
+                emotion.textContent = '';
+            }, 2000);
+        }
+
+        function winGame() {
+            showDialog('Hahahaha!');
+            const ork = document.getElementById('ork');
+            ork.style.transition = 'left 2s';
+            ork.style.left = '0%';
+            setTimeout(() => {
+                const player = document.getElementById('player');
+                player.style.transition = 'left 2s';
+                player.style.left = '80%';
+                setTimeout(() => {
+                    const winVideo = document.getElementById('win-video');
+                    winVideo.style.display = 'block';
+                    confetti();
+                    player.style.opacity = '0';
+                }, 2000);
+            }, 1000);
+        }
+
+        function loseGame() {
+            showDialog('Take this!');
+            const ork = document.getElementById('ork');
+            ork.style.transition = 'left 2s';
+            ork.style.left = '50%';
+            setTimeout(() => {
+                ork.style.animation = 'wave-axe 1s infinite';
+                setTimeout(() => {
+                    document.getElementById('game-over').style.display = 'block';
+                }, 2000);
+            }, 2000);
+        }
+
+        function confetti() {
+            const conf = document.getElementById('confetti');
+            conf.style.display = 'block';
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = '#fff';
+                piece.style.animationDuration = Math.random()*3 + 2 + 's';
+                piece.style.animationDelay = Math.random() + 's';
+                conf.appendChild(piece);
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
