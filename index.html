@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rialo Role Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -47,7 +48,7 @@
         }
         #ork {
             position: absolute;
-            left: 5%; /* Maximally left */
+            left: 0%; /* Further apart: maximally left */
             top: 50%;
             transform: translateY(-50%);
             width: 220px; /* Slightly larger than player */
@@ -57,7 +58,7 @@
         }
         #ork-name {
             position: absolute;
-            left: 5%;
+            left: 0%;
             top: 20%;
             background: #fff;
             color: #000;
@@ -70,7 +71,7 @@
         }
         #ork-emotion {
             position: absolute;
-            left: 5%;
+            left: 0%;
             top: 30%;
             font-size: 50px;
             pointer-events: none;
@@ -79,7 +80,7 @@
         }
         #rialo-logo {
             position: absolute;
-            right: 5%; /* Maximally right */
+            right: 0%; /* Further apart: maximally right for logo */
             transform: translateY(-50%);
             width: 200px;
             height: auto;
@@ -87,7 +88,7 @@
         }
         #player {
             position: absolute;
-            right: 5%; /* Maximally right */
+            right: 0%; /* Further apart: maximally right */
             bottom: 20%;
             width: 200px; /* Same size as logo, slightly smaller than ork */
             height: auto;
@@ -96,7 +97,7 @@
         }
         #player-name {
             position: absolute;
-            right: 5%;
+            right: 0%;
             top: 20%;
             background: #fff;
             color: #000;
@@ -137,6 +138,12 @@
             border: 10px solid transparent;
             border-right-color: #fff;
             transform: translateY(-50%);
+        }
+        #dialog.win-dialog {
+            background: rgba(255, 165, 0, 0.9);
+            color: #fff;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
         }
         #player-dialog {
             display: none;
@@ -247,6 +254,12 @@
             75% { transform: translateY(-50%) rotate(-45deg); }
             100% { transform: translateY(-50%) rotate(0deg); }
         }
+        @keyframes clap-hands {
+            0%, 100% { transform: translateY(-50%) rotate(0deg) scale(1); }
+            25% { transform: translateY(-50%) rotate(10deg) scale(1.05); }
+            50% { transform: translateY(-50%) rotate(-10deg) scale(1.05); }
+            75% { transform: translateY(-50%) rotate(10deg) scale(1.05); }
+        }
     </style>
 </head>
 <body>
@@ -277,6 +290,7 @@
         let stage = 0;
         let correctAnswers = 0;
         let currentRound = 0;
+        let audioCtx = null;
         const rounds = [
             {
                 question: "But but but, you won't pass! To go further, make me laugh!",
@@ -307,6 +321,46 @@
             }
         ];
 
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(frequency, duration, type = 'sine') {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playLaughSound() {
+            initAudio();
+            // Ha-ha-ha: short bursts at higher frequency
+            playTone(800, 0.2);
+            setTimeout(() => playTone(900, 0.2), 250);
+            setTimeout(() => playTone(800, 0.2), 500);
+        }
+
+        function playAngrySound() {
+            initAudio();
+            // Growl: low frequency rumble
+            playTone(200, 1.0, 'sawtooth');
+        }
+
+        function playClapSound() {
+            initAudio();
+            // Clap: quick sharp bursts
+            playTone(1000, 0.05);
+            setTimeout(() => playTone(1200, 0.05), 50);
+        }
+
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -316,6 +370,7 @@
         }
 
         function startGame() {
+            initAudio(); // Initialize audio on start
             countdown(3);
         }
 
@@ -349,6 +404,7 @@
         function showDialog(text) {
             const dialog = document.getElementById('dialog');
             dialog.textContent = text;
+            dialog.classList.remove('win-dialog'); // Reset class if needed
             dialog.style.display = 'block';
         }
 
@@ -390,6 +446,7 @@
                 if (isCorrect) {
                     correctAnswers++;
                     showEmotion('😂');
+                    playLaughSound();
                     showDialog('Hohoho!');
                     ork.style.transform = 'translateY(-50%) rotate(5deg)';
                     setTimeout(() => {
@@ -410,6 +467,7 @@
                 } else {
                     stage++;
                     showEmotion('😡');
+                    playAngrySound();
                     showDialog('Grrr! That wasn\'t funny!');
                     ork.style.filter = 'hue-rotate(0deg) grayscale(100%)';
                     setTimeout(() => {
@@ -440,6 +498,7 @@
 
         function winGame() {
             showDialog('Hahahaha!');
+            playLaughSound();
             const ork = document.getElementById('ork');
             ork.style.transition = 'left 2s';
             ork.style.left = '0%';
@@ -448,6 +507,19 @@
                 player.style.transition = 'left 2s';
                 player.style.left = '80%';
                 setTimeout(() => {
+                    // Welcome message with orange text, Google style, clapping animation and sound
+                    const dialog = document.getElementById('dialog');
+                    dialog.textContent = 'Welcome to Club Member';
+                    dialog.classList.add('win-dialog');
+                    dialog.style.display = 'block';
+                    dialog.style.left = '50%';
+                    dialog.style.transform = 'translateX(-50%)';
+                    dialog.style.top = '60%';
+                    playClapSound();
+                    ork.style.animation = 'clap-hands 1s infinite';
+                    setTimeout(() => {
+                        ork.style.animation = '';
+                    }, 5000); // Clap for 5 seconds
                     const winVideo = document.getElementById('win-video');
                     const winMessage = document.getElementById('win-message');
                     winVideo.style.display = 'block';
@@ -460,6 +532,7 @@
 
         function loseGame() {
             showDialog('Take this!');
+            playAngrySound();
             const ork = document.getElementById('ork');
             ork.style.transition = 'left 2s';
             ork.style.left = '40%'; /* Closer to player */
